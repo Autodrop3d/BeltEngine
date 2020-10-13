@@ -41,7 +41,7 @@ def tempFileName():
 def main():
     parser = argparse.ArgumentParser(description="Belt-style printer pre- and postprocessor for CuraEngine.")
     parser.add_argument("-v", action="store_true", help="show verbose messages")
-    parser.add_argument("-e", type=str, nargs=1, help="CuraEngine executable path")
+    parser.add_argument("-x", type=str, nargs=1, help="CuraEngine executable path")
     parser.add_argument("-c", type=str, nargs="?", help="config file")
     parser.add_argument("-s", type=str, nargs=1, action="append", help="settings")
     parser.add_argument("-o", type=str, nargs=1, help="gcode output file")
@@ -52,8 +52,8 @@ def main():
         logger.setLevel(logging.DEBUG)
 
     # get CuraEngine executable
-    if (known_args["e"]):
-        engine_path = known_args["e"]
+    if (known_args["x"]):
+        engine_path = known_args["x"]
     else:
         if sys.platform == "win32":
             engine_path = "bin/windows/CuraEngine.exe"
@@ -125,8 +125,16 @@ def main():
     support_mesh = support_mesh_creator.createSupportMesh(input_mesh)
     support_mesh.visual.vertex_colors = [[0,255,255,255]] * len(support_mesh.vertices)
 
+    logger.info("Create raft mesh")
+    raft_mesh_polygon = trimesh.path.polygons.projected(input_mesh.convex_hull, [0,1,0])
+    raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -0.1)
+    raft_mesh.vertices[:,[0,1,2]] = raft_mesh.vertices[:,[1,2,0]]
+    raft_mesh.vertices[:,2] = -raft_mesh.vertices[:,2]
+    raft_mesh.invert()
+    raft_mesh.visual.vertex_colors = [[128,128,128,255]] * len(raft_mesh.vertices)
+
     if (known_args["v"]):
-        (support_mesh + input_mesh).show()
+        (raft_mesh + support_mesh + input_mesh).show()
 
     logger.info("Creating temporary pretransformed mesh")
     flipYZ(input_mesh)
@@ -135,12 +143,19 @@ def main():
     temp_mesh_file_path = tempFileName()
     input_mesh.export(temp_mesh_file_path)
 
-    logger.info("Creating temporary pretransformed transform-mesh")
+    logger.info("Creating temporary pretransformed support-mesh")
     flipYZ(support_mesh)
     support_mesh.invert()
     mesh_pretransformer.pretransformMesh(support_mesh)
     temp_support_mesh_file_path = tempFileName()
     support_mesh.export(temp_support_mesh_file_path)
+
+    logger.info("Creating temporary pretransformed raft-mesh")
+    flipYZ(raft_mesh)
+    raft_mesh.invert()
+    mesh_pretransformer.pretransformMesh(raft_mesh)
+    temp_raft_mesh_file_path = tempFileName()
+    raft_mesh.export(temp_raft_mesh_file_path)
 
     logger.info("Launching CuraEngine")
     engine_args = [
@@ -154,12 +169,15 @@ def main():
         engine_args.extend(["-s", "%s=%s" % (key, value)])
     engine_args.extend(["-l", temp_support_mesh_file_path])
     engine_args.extend(["-s",  "support_mesh=true"])
+    engine_args.extend(["-l", temp_raft_mesh_file_path])
+    # TODO: raft mesh settings
 
     output = subprocess.check_output(engine_args)
     logger.debug(output)
 
     os.remove(temp_mesh_file_path)
     os.remove(temp_support_mesh_file_path)
+    os.remove(temp_raft_mesh_file_path)
 
 if __name__ == "__main__":
     sys.exit(main())
