@@ -1,1 +1,2 @@
 trimesh[easy]
+triangle
