@@ -31,6 +31,7 @@ logger.addHandler(stream_handler)
 
 from SupportMeshCreator import SupportMeshCreator
 from MeshPretransformer import MeshPretransformer
+from SettingsParser import SettingsParser
 
 def flipYZ(tri_mesh):
     tri_mesh.vertices[:,[2,1]] = tri_mesh.vertices[:,[1,2]]
@@ -42,7 +43,7 @@ def main():
     parser = argparse.ArgumentParser(description="Belt-style printer pre- and postprocessor for CuraEngine.")
     parser.add_argument("-v", action="store_true", help="show verbose messages")
     parser.add_argument("-x", type=str, nargs=1, help="CuraEngine executable path")
-    parser.add_argument("-c", type=str, nargs="?", help="config file")
+    parser.add_argument("-c", type=str, nargs=1, action="append", help="config file")
     parser.add_argument("-s", type=str, nargs=1, action="append", help="settings")
     parser.add_argument("-o", type=str, nargs=1, help="gcode output file")
     parser.add_argument("model.stl", type=str, nargs=1, help="stl model file to slice")
@@ -71,35 +72,32 @@ def main():
     else:
         logger.info("Using CuraEngine from %s" % engine_path)
 
-    # parse config file and command-line settings
-    settings = OrderedDict()
-    if known_args["c"]:
-        config_file_path = os.path.abspath(known_args["c"])
-        if not os.path.exists(config_file_path):
-            logger.error("Specified config file not found: %s" % config_file_path)
-            return 1
-
-        logger.debug("Reading settings from %s" % config_file_path)
-        with open(config_file_path) as config_file_pointer:
-            config_file_content = config_file_pointer.read()
-        if "[profile]" not in config_file_content:
-            config_file_content = "[profile]\n" + config_file_content
-
-        config_parser = configparser.ConfigParser()
-        config_parser.read_string(config_file_content)
-        settings = OrderedDict(config_parser["profile"])
-
-    if known_args["s"]:
-        commandline_settings = [tuple(setting_str[0].split("=", 1)) for setting_str in known_args["s"]]
-        for key, value in commandline_settings:
-            settings[key] = value
-
-    # TODO: use dictionary of doom to convert legacy to current settings
+    settings_parser = SettingsParser(known_args["c"], known_args["s"])
+    settings = settings_parser.getNonDefaultValues()
     logger.debug("Settings: %s" % ", ".join(["%s:%s" % (s, settings[s]) for s in settings]))
 
-    # TODO: use settings
+    # get belt slicing settings
+    beltengine_gantry_angle = float(settings_parser.getSettingValue("beltengine_gantry_angle"))
+
+    beltengine_raft = settings_parser.getSettingValue("beltengine_raft")
+    beltengine_raft_margin = settings_parser.getSettingValue("beltengine_raft_margin")
+    beltengine_raft_thickness = settings_parser.getSettingValue("beltengine_raft_thickness")
+    beltengine_raft_gap = settings_parser.getSettingValue("beltengine_raft_gap")
+    beltengine_raft_speed = settings_parser.getSettingValue("beltengine_raft_speed")
+    beltengine_raft_flow = settings_parser.getSettingValue("beltengine_raft_flow")
+
+    beltengine_belt_wall_enabled = settings_parser.getSettingValue("beltengine_belt_wall_enabled")
+    beltengine_belt_wall_speed = settings_parser.getSettingValue("beltengine_belt_wall_speed")
+    beltengine_belt_wall_flow = settings_parser.getSettingValue("beltengine_belt_wall_flow")
+
+    support_enable = settings_parser.getSettingValue("support_enable")
+    beltengine_support_gantry_angle_bias = settings_parser.getSettingValue("beltengine_support_gantry_angle_bias")
+    beltengine_support_minimum_island_area = settings_parser.getSettingValue("beltengine_support_minimum_island_area")
+
+    machine_depth = settings_parser.getSettingValue("machine_depth")
+
     support_mesh_creator = SupportMeshCreator()
-    mesh_pretransformer = MeshPretransformer()
+    mesh_pretransformer = MeshPretransformer(gantry_angle = beltengine_gantry_angle, machine_depth = settings_parser.getSettingValue("machine_depth"))
 
     mesh_file_path = os.path.abspath(known_args["model.stl"][0])
     if not os.path.exists(mesh_file_path):
@@ -127,11 +125,17 @@ def main():
 
     logger.info("Create raft mesh")
     raft_mesh_polygon = trimesh.path.polygons.projected(input_mesh.convex_hull, [0,1,0])
-    raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -0.1)
-    raft_mesh.vertices[:,[0,1,2]] = raft_mesh.vertices[:,[1,2,0]]
-    raft_mesh.vertices[:,2] = -raft_mesh.vertices[:,2]
+    raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -beltengine_raft_thickness)
+    raft_mesh.vertices[:,[0,1,2]] = -raft_mesh.vertices[:,[1,2,0]]
     raft_mesh.invert()
     raft_mesh.visual.vertex_colors = [[128,128,128,255]] * len(raft_mesh.vertices)
+
+    translation_for_raft = trimesh.transformations.translation_matrix([
+        0, beltengine_raft_thickness + beltengine_raft_gap, 0
+    ])
+    input_mesh.apply_transform(translation_for_raft)
+    if support_mesh:
+        support_mesh.apply_transform(translation_for_raft)
 
     if (known_args["v"]):
         (raft_mesh + support_mesh + input_mesh).show()
