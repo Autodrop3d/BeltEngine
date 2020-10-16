@@ -70,6 +70,8 @@ class SettingsParser():
         # TODO: use dictionary of doom to convert legacy to current settings
 
         definition = self.getDefinition(key)
+        if not definition:
+            return
         if str(definition["default_value"]) == value:
             if key in self._data:
                 del(self._data[key])

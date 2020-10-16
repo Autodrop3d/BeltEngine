@@ -9,6 +9,7 @@ import argparse
 from collections import OrderedDict
 import configparser
 import trimesh
+import math
 import tempfile
 import subprocess
 
@@ -77,7 +78,7 @@ def main():
     logger.debug("Settings: %s" % ", ".join(["%s:%s" % (s, settings[s]) for s in settings]))
 
     # get belt slicing settings
-    beltengine_gantry_angle = float(settings_parser.getSettingValue("beltengine_gantry_angle"))
+    beltengine_gantry_angle = math.radians(float(settings_parser.getSettingValue("beltengine_gantry_angle")))
 
     beltengine_raft = settings_parser.getSettingValue("beltengine_raft")
     beltengine_raft_margin = settings_parser.getSettingValue("beltengine_raft_margin")
@@ -91,13 +92,15 @@ def main():
     beltengine_belt_wall_flow = settings_parser.getSettingValue("beltengine_belt_wall_flow")
 
     support_enable = settings_parser.getSettingValue("support_enable")
-    beltengine_support_gantry_angle_bias = settings_parser.getSettingValue("beltengine_support_gantry_angle_bias")
+    beltengine_support_gantry_angle_bias = math.radians(settings_parser.getSettingValue("beltengine_support_gantry_angle_bias"))
     beltengine_support_minimum_island_area = settings_parser.getSettingValue("beltengine_support_minimum_island_area")
 
     machine_depth = settings_parser.getSettingValue("machine_depth")
 
-    support_mesh_creator = SupportMeshCreator()
-    mesh_pretransformer = MeshPretransformer(gantry_angle = beltengine_gantry_angle, machine_depth = settings_parser.getSettingValue("machine_depth"))
+    mesh_pretransformer = MeshPretransformer(
+        gantry_angle=beltengine_gantry_angle,
+        machine_depth=settings_parser.getSettingValue("machine_depth")
+    )
 
     mesh_file_path = os.path.abspath(known_args["model.stl"][0])
     if not os.path.exists(mesh_file_path):
@@ -119,26 +122,44 @@ def main():
         -input_bounds[0][2]
     ]))
 
-    logger.info("Create support mesh")
-    support_mesh = support_mesh_creator.createSupportMesh(input_mesh)
-    support_mesh.visual.vertex_colors = [[0,255,255,255]] * len(support_mesh.vertices)
+    support_mesh = None
+    if support_enable:
+        logger.info("Create support mesh")
+        support_mesh_creator = SupportMeshCreator(
+            support_angle=settings_parser.getSettingValue("support_angle"),
+            filter_upwards_facing_faces=True,
+            down_vector=[0, -math.cos(math.radians(beltengine_support_gantry_angle_bias)), -math.sin(beltengine_support_gantry_angle_bias)],
+            bottom_cut_off=settings_parser.getSettingValue("wall_line_width_0"),
+            minimum_island_area=beltengine_support_minimum_island_area
+        )
 
-    logger.info("Create raft mesh")
-    raft_mesh_polygon = trimesh.path.polygons.projected(input_mesh.convex_hull, [0,1,0])
-    raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -beltengine_raft_thickness)
-    raft_mesh.vertices[:,[0,1,2]] = -raft_mesh.vertices[:,[1,2,0]]
-    raft_mesh.invert()
-    raft_mesh.visual.vertex_colors = [[128,128,128,255]] * len(raft_mesh.vertices)
+        support_mesh = support_mesh_creator.createSupportMesh(input_mesh)
+        support_mesh.visual.vertex_colors = [[0,255,255,255]] * len(support_mesh.vertices)
 
-    translation_for_raft = trimesh.transformations.translation_matrix([
-        0, beltengine_raft_thickness + beltengine_raft_gap, 0
-    ])
-    input_mesh.apply_transform(translation_for_raft)
-    if support_mesh:
-        support_mesh.apply_transform(translation_for_raft)
+    raft_mesh = None
+    if beltengine_raft:
+        logger.info("Create raft mesh")
+        raft_mesh_polygon = trimesh.path.polygons.projected(input_mesh.convex_hull, [0,1,0])
+        raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -beltengine_raft_thickness)
+        raft_mesh.vertices[:,[0,1,2]] = -raft_mesh.vertices[:,[1,2,0]]
+        raft_mesh.invert()
+        raft_mesh.visual.vertex_colors = [[128,128,128,255]] * len(raft_mesh.vertices)
+
+        translation_for_raft = trimesh.transformations.translation_matrix([
+            0, beltengine_raft_thickness + beltengine_raft_gap, 0
+        ])
+        input_mesh.apply_transform(translation_for_raft)
+        if support_mesh:
+            support_mesh.apply_transform(translation_for_raft)
 
     if (known_args["v"]):
-        (raft_mesh + support_mesh + input_mesh).show()
+        show_mesh = input_mesh.copy()
+        if support_enable:
+            show_mesh += support_mesh
+        if raft_mesh:
+            show_mesh += raft_mesh
+
+        show_mesh.show()
 
     logger.info("Creating temporary pretransformed mesh")
     flipYZ(input_mesh)
@@ -146,20 +167,6 @@ def main():
     mesh_pretransformer.pretransformMesh(input_mesh)
     temp_mesh_file_path = tempFileName()
     input_mesh.export(temp_mesh_file_path)
-
-    logger.info("Creating temporary pretransformed support-mesh")
-    flipYZ(support_mesh)
-    support_mesh.invert()
-    mesh_pretransformer.pretransformMesh(support_mesh)
-    temp_support_mesh_file_path = tempFileName()
-    support_mesh.export(temp_support_mesh_file_path)
-
-    logger.info("Creating temporary pretransformed raft-mesh")
-    flipYZ(raft_mesh)
-    raft_mesh.invert()
-    mesh_pretransformer.pretransformMesh(raft_mesh)
-    temp_raft_mesh_file_path = tempFileName()
-    raft_mesh.export(temp_raft_mesh_file_path)
 
     logger.info("Launching CuraEngine")
     engine_args = [
@@ -171,10 +178,32 @@ def main():
     ]
     for (key, value) in settings.items():
         engine_args.extend(["-s", "%s=%s" % (key, value)])
-    engine_args.extend(["-l", temp_support_mesh_file_path])
-    engine_args.extend(["-s",  "support_mesh=true"])
-    engine_args.extend(["-l", temp_raft_mesh_file_path])
-    # TODO: raft mesh settings
+
+    if support_enable:
+        logger.info("Creating temporary pretransformed support-mesh")
+        flipYZ(support_mesh)
+        support_mesh.invert()
+        mesh_pretransformer.pretransformMesh(support_mesh)
+        temp_support_mesh_file_path = tempFileName()
+        support_mesh.export(temp_support_mesh_file_path)
+
+        engine_args.extend(["-l", temp_support_mesh_file_path])
+        engine_args.extend(["-s",  "support_mesh=true"])
+        engine_args.extend(["-s",  "support_mesh_drop_down=false"])
+
+    if beltengine_raft:
+        logger.info("Creating temporary pretransformed raft-mesh")
+        flipYZ(raft_mesh)
+        raft_mesh.invert()
+        mesh_pretransformer.pretransformMesh(raft_mesh)
+        temp_raft_mesh_file_path = tempFileName()
+        raft_mesh.export(temp_raft_mesh_file_path)
+
+        engine_args.extend(["-l", temp_raft_mesh_file_path])
+        engine_args.extend(["-s", "wall_line_count=99999999"])
+        engine_args.extend(["-s", "speed_wall_0=%f" % beltengine_raft_speed])
+        engine_args.extend(["-s", "speed_wall_x=%f" % beltengine_raft_speed])
+        engine_args.extend(["-s", "material_flow=%f" % beltengine_raft_flow])
 
     output = subprocess.check_output(engine_args)
     logger.debug(output)
