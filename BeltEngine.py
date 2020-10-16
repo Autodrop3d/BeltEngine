@@ -80,14 +80,14 @@ def main():
     # get belt slicing settings
     beltengine_gantry_angle = math.radians(float(settings_parser.getSettingValue("beltengine_gantry_angle")))
 
-    beltengine_raft = settings_parser.getSettingValue("beltengine_raft")
+    beltengine_raft_enable = settings_parser.getSettingValue("beltengine_raft_enable")
     beltengine_raft_margin = settings_parser.getSettingValue("beltengine_raft_margin")
     beltengine_raft_thickness = settings_parser.getSettingValue("beltengine_raft_thickness")
     beltengine_raft_gap = settings_parser.getSettingValue("beltengine_raft_gap")
     beltengine_raft_speed = settings_parser.getSettingValue("beltengine_raft_speed")
     beltengine_raft_flow = settings_parser.getSettingValue("beltengine_raft_flow") * math.sin(beltengine_gantry_angle)
 
-    beltengine_belt_wall_enabled = settings_parser.getSettingValue("beltengine_belt_wall_enabled")
+    beltengine_belt_wall_enable = settings_parser.getSettingValue("beltengine_belt_wall_enable")
     beltengine_belt_wall_speed = settings_parser.getSettingValue("beltengine_belt_wall_speed")
     beltengine_belt_wall_flow = settings_parser.getSettingValue("beltengine_belt_wall_flow") * math.sin(beltengine_gantry_angle)
 
@@ -142,7 +142,7 @@ def main():
         support_mesh.visual.vertex_colors = [[0,255,255,255]] * len(support_mesh.vertices)
 
     raft_mesh = None
-    if beltengine_raft:
+    if beltengine_raft_enable:
         logger.info("Create raft mesh")
         raft_mesh_polygon = trimesh.path.polygons.projected(input_mesh.convex_hull, [0,1,0])
         raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -beltengine_raft_thickness)
@@ -196,7 +196,7 @@ def main():
         engine_args.extend(["-s",  "support_mesh=true"])
         engine_args.extend(["-s",  "support_mesh_drop_down=false"])
 
-    if beltengine_raft:
+    if beltengine_raft_enable:
         logger.info("Creating temporary pretransformed raft-mesh")
         flipYZ(raft_mesh)
         raft_mesh.invert()
@@ -214,9 +214,12 @@ def main():
     for line in process.stdout:
         logger.debug(line)
 
+    logger.info("Removing temporary meshes")
     os.remove(temp_mesh_file_path)
-    os.remove(temp_support_mesh_file_path)
-    os.remove(temp_raft_mesh_file_path)
+    if support_enable:
+        os.remove(temp_support_mesh_file_path)
+    if beltengine_raft_enable:
+        os.remove(temp_raft_mesh_file_path)
 
 if __name__ == "__main__":
     sys.exit(main())
