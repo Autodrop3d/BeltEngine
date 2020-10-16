@@ -85,17 +85,22 @@ def main():
     beltengine_raft_thickness = settings_parser.getSettingValue("beltengine_raft_thickness")
     beltengine_raft_gap = settings_parser.getSettingValue("beltengine_raft_gap")
     beltengine_raft_speed = settings_parser.getSettingValue("beltengine_raft_speed")
-    beltengine_raft_flow = settings_parser.getSettingValue("beltengine_raft_flow")
+    beltengine_raft_flow = settings_parser.getSettingValue("beltengine_raft_flow") * math.sin(beltengine_gantry_angle)
 
     beltengine_belt_wall_enabled = settings_parser.getSettingValue("beltengine_belt_wall_enabled")
     beltengine_belt_wall_speed = settings_parser.getSettingValue("beltengine_belt_wall_speed")
-    beltengine_belt_wall_flow = settings_parser.getSettingValue("beltengine_belt_wall_flow")
+    beltengine_belt_wall_flow = settings_parser.getSettingValue("beltengine_belt_wall_flow") * math.sin(beltengine_gantry_angle)
 
     support_enable = settings_parser.getSettingValue("support_enable")
     beltengine_support_gantry_angle_bias = math.radians(settings_parser.getSettingValue("beltengine_support_gantry_angle_bias"))
     beltengine_support_minimum_island_area = settings_parser.getSettingValue("beltengine_support_minimum_island_area")
 
-    machine_depth = settings_parser.getSettingValue("machine_depth")
+    settings_parser.setSettingValue("support_enable", "False")
+    settings_parser.setSettingValue("adhesion_type", "none")
+    for key in ["layer_height", "layer_height_0"]:
+        settings_parser.setSettingValue(key, settings_parser.getSettingValue(key) / math.sin(beltengine_gantry_angle))
+    for key in ["wall_0_material_flow", "wall_x_material_flow", "skin_material_flow", "roofing_material_flow", "infill_material_flow", "skirt_brim_material_flow", "support_material_flow", "support_roof_material_flow", "support_bottom_material_flow"]:
+        settings_parser.setSettingValue(key, settings_parser.getSettingValue(key) * math.sin(beltengine_gantry_angle))
 
     mesh_pretransformer = MeshPretransformer(
         gantry_angle=beltengine_gantry_angle,
@@ -205,8 +210,9 @@ def main():
         engine_args.extend(["-s", "speed_wall_x=%f" % beltengine_raft_speed])
         engine_args.extend(["-s", "material_flow=%f" % beltengine_raft_flow])
 
-    output = subprocess.check_output(engine_args)
-    logger.debug(output)
+    process = subprocess.Popen(engine_args, stdout=subprocess.PIPE)
+    for line in process.stdout:
+        logger.debug(line)
 
     os.remove(temp_mesh_file_path)
     os.remove(temp_support_mesh_file_path)

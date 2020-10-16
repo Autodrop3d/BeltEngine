@@ -85,7 +85,12 @@ class SettingsParser():
 
             self._data[key] = value
 
-    def _toFloatConversion(self, value: str) -> float:
+    def _toFloatConversion(self, value):
+        if type(value) is float:
+            return value
+        elif type(value) is int:
+            return float(value)
+
         value = value.replace(",", ".")
         """Ensure that all , are replaced with . (so they are seen as floats)"""
 
@@ -104,6 +109,10 @@ class SettingsParser():
             return 0
 
     def _toIntConversion(self, value):
+        if type(value) is int:
+            return value
+        elif type(value) is float:
+            return int(value)
         try:
             return ast.literal_eval(value)
         except SyntaxError:
