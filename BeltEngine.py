@@ -29,9 +29,10 @@ stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(logging_formatter)
 logger.addHandler(stream_handler)
 
+from SettingsParser import SettingsParser
 from SupportMeshCreator import SupportMeshCreator
 from MeshPretransformer import MeshPretransformer
-from SettingsParser import SettingsParser
+from GcodePostProcessor import GcodePostProcessor
 
 def flipYZ(tri_mesh):
     tri_mesh.vertices[:,[2,1]] = tri_mesh.vertices[:,[1,2]]
@@ -95,7 +96,7 @@ def main():
     beltengine_support_minimum_island_area = settings_parser.getSettingValue("beltengine_support_minimum_island_area")
 
     settings_parser.setSettingValue("support_enable", "False")
-    settings_parser.setSettingValue("adhesion_type", "none")
+    settings_parser.setSettingValue("adhesion_type", "\"none\"")
     for key in ["layer_height", "layer_height_0"]:
         settings_parser.setSettingValue(key, settings_parser.getSettingValue(key) / math.sin(beltengine_gantry_angle))
     for key in ["wall_0_material_flow", "wall_x_material_flow", "skin_material_flow", "roofing_material_flow", "infill_material_flow", "skirt_brim_material_flow", "support_material_flow", "support_roof_material_flow", "support_bottom_material_flow"]:
@@ -215,6 +216,8 @@ def main():
         engine_args.extend(["-s", "speed_wall_x=%f" % beltengine_raft_speed])
         engine_args.extend(["-s", "material_flow=%f" % beltengine_raft_flow])
 
+    logger.debug(engine_args)
+
     process = subprocess.Popen(engine_args, stdout=subprocess.PIPE)
     for line in process.stdout:
         logger.debug(line)
@@ -225,6 +228,17 @@ def main():
         os.remove(temp_support_mesh_file_path)
     if beltengine_raft_enable:
         os.remove(temp_raft_mesh_file_path)
+
+    if beltengine_belt_wall_enable:
+        logger.info("Post processing gcode for belt wall")
+
+        post_processor = GcodePostProcessor(
+            belt_wall_enable=beltengine_belt_wall_enable,
+            belt_wall_flow=beltengine_belt_wall_flow,
+            belt_wall_speed=beltengine_belt_wall_speed,
+            wall_line_width_0=settings_parser.getSettingValue("wall_line_width_0")
+        )
+        post_processor.processGcodeFile(known_args["o"][0])
 
 if __name__ == "__main__":
     sys.exit(main())

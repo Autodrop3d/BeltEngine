@@ -7,9 +7,9 @@ import trimesh
 
 class MeshPretransformer():
     def __init__(self,
-                 gantry_angle = math.radians(45),
-                 machine_depth = 99999,
-            ):
+                gantry_angle = math.radians(45),
+                machine_depth = 99999,
+        ):
 
         matrix = numpy.identity(4)
         matrix[:,1] = [0, 1 / math.tan(gantry_angle), 1, (machine_depth / 2) * (1 - math.cos(gantry_angle))]

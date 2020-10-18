@@ -7,12 +7,12 @@ import trimesh
 
 class SupportMeshCreator():
     def __init__(self,
-                    support_angle = 50,
-                    filter_upwards_facing_faces = True,
-                    down_vector = numpy.array([0, -1, 0]),
-                    bottom_cut_off = 0,
-                    minimum_island_area = 0
-                ):
+                support_angle = 50,
+                filter_upwards_facing_faces = True,
+                down_vector = numpy.array([0, -1, 0]),
+                bottom_cut_off = 0,
+                minimum_island_area = 0
+        ):
         self._support_angle = support_angle
 
         self._filter_upwards_facing_faces = filter_upwards_facing_faces
