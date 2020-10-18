@@ -6,9 +6,8 @@
 import sys
 import os
 import argparse
-from collections import OrderedDict
-import configparser
 import trimesh
+import shapely
 import math
 import tempfile
 import subprocess
@@ -145,6 +144,12 @@ def main():
     if beltengine_raft_enable:
         logger.info("Create raft mesh")
         raft_mesh_polygon = trimesh.path.polygons.projected(input_mesh.convex_hull, [0,1,0])
+        if beltengine_raft_margin > 0:
+            offset_raft_mesh_points = raft_mesh_polygon.exterior.parallel_offset(beltengine_raft_margin, side="left", resolution=5)
+            raft_mesh_polygon = shapely.geometry.Polygon(offset_raft_mesh_points)
+        elif beltengine_raft_margin < 0:
+            offset_raft_mesh_points = raft_mesh_polygon.exterior.parallel_offset(-beltengine_raft_margin, side="right", resolution=5)
+            raft_mesh_polygon = shapely.geometry.Polygon(offset_raft_mesh_points)
         raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -beltengine_raft_thickness)
         raft_mesh.vertices[:,[0,1,2]] = -raft_mesh.vertices[:,[1,2,0]]
         raft_mesh.invert()
