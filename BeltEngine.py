@@ -96,7 +96,7 @@ def main():
     beltengine_support_minimum_island_area = settings_parser.getSettingValue("beltengine_support_minimum_island_area")
 
     settings_parser.setSettingValue("support_enable", "False")
-    settings_parser.setSettingValue("adhesion_type", "\"none\"")
+    settings_parser.setSettingValue("adhesion_type", "none")
     for key in ["layer_height", "layer_height_0"]:
         settings_parser.setSettingValue(key, settings_parser.getSettingValue(key) / math.sin(beltengine_gantry_angle))
     for key in ["wall_0_material_flow", "wall_x_material_flow", "skin_material_flow", "roofing_material_flow", "infill_material_flow", "skirt_brim_material_flow", "support_material_flow", "support_roof_material_flow", "support_bottom_material_flow"]:
@@ -115,17 +115,19 @@ def main():
     logger.info("Loading mesh %s" % mesh_file_path)
     input_mesh = trimesh.load(mesh_file_path)
     flipYZ(input_mesh)
-    input_mesh.fix_normals()
+    input_mesh.vertices[:,[2]] = -input_mesh.vertices[:,[2]]
 
     input_bounds = input_mesh.bounds
     input_mesh.visual.vertex_colors = [[255,201,36,255]] * len(input_mesh.vertices)
 
     logger.info("Moving mesh to the start of the belt")
     input_mesh.apply_transform(trimesh.transformations.translation_matrix([
-        (input_bounds[0][0] + input_bounds[1][0]) / -2.0,
+        (-settings_parser.getSettingValue("machine_width") + input_bounds[0][0] + input_bounds[1][0]) / -2.0,
         -input_bounds[0][1],
-        -input_bounds[0][2]
+        -input_bounds[0][2] - (input_bounds[1][2] - input_bounds[0][2])
     ]))
+
+    input_mesh.fix_normals()
 
     support_mesh = None
     if support_enable:
@@ -170,12 +172,12 @@ def main():
         if raft_mesh:
             show_mesh += raft_mesh
 
-        show_mesh.show()
+        show_mesh.show(smooth=False, flags={"axis": True, "grid": True})
 
     logger.info("Creating temporary pretransformed mesh")
+    mesh_pretransformer.pretransformMesh(input_mesh)
     flipYZ(input_mesh)
     input_mesh.invert()
-    mesh_pretransformer.pretransformMesh(input_mesh)
     temp_mesh_file_path = tempFileName()
     input_mesh.export(temp_mesh_file_path)
 
@@ -185,16 +187,17 @@ def main():
         "slice",
         "-j", os.path.join("resources","definitions","fdmprinter.def.json"),
         "-o", known_args["o"][0],
-        "-l", temp_mesh_file_path
     ]
     for (key, value) in settings.items():
         engine_args.extend(["-s", "%s=%s" % (key, value)])
 
+    engine_args.extend(["-l", temp_mesh_file_path])
+
     if support_enable:
         logger.info("Creating temporary pretransformed support-mesh")
+        mesh_pretransformer.pretransformMesh(support_mesh)
         flipYZ(support_mesh)
         support_mesh.invert()
-        mesh_pretransformer.pretransformMesh(support_mesh)
         temp_support_mesh_file_path = tempFileName()
         support_mesh.export(temp_support_mesh_file_path)
 
@@ -204,9 +207,9 @@ def main():
 
     if beltengine_raft_enable:
         logger.info("Creating temporary pretransformed raft-mesh")
+        mesh_pretransformer.pretransformMesh(raft_mesh)
         flipYZ(raft_mesh)
         raft_mesh.invert()
-        mesh_pretransformer.pretransformMesh(raft_mesh)
         temp_raft_mesh_file_path = tempFileName()
         raft_mesh.export(temp_raft_mesh_file_path)
 
@@ -217,6 +220,15 @@ def main():
         engine_args.extend(["-s", "material_flow=%f" % beltengine_raft_flow])
 
     logger.debug(engine_args)
+
+    if (known_args["v"]):
+        show_mesh = input_mesh.copy()
+        if support_enable:
+            show_mesh += support_mesh
+        if raft_mesh:
+            show_mesh += raft_mesh
+
+        show_mesh.show(smooth=False, flags={"axis": True, "grid": True})
 
     process = subprocess.Popen(engine_args, stdout=subprocess.PIPE)
     for line in process.stdout:
