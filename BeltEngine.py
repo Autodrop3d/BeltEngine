@@ -121,7 +121,7 @@ def main():
 
     logger.info("Moving mesh to the start of the belt")
     input_mesh.apply_transform(trimesh.transformations.translation_matrix([
-        (-settings_parser.getSettingValue("machine_width") + input_bounds[0][0] + input_bounds[1][0]) / -2.0,
+        (input_bounds[0][0] + input_bounds[1][0]) / -2,
         -input_bounds[0][1],
         -input_bounds[0][2] - (input_bounds[1][2] - input_bounds[0][2])
     ]))
@@ -215,15 +215,6 @@ def main():
         engine_args.extend(["-s", "material_flow=%f" % beltengine_raft_flow])
 
     logger.debug(engine_args)
-
-    if (known_args["v"]):
-        show_mesh = input_mesh.copy()
-        if support_enable:
-            show_mesh += support_mesh
-        if raft_mesh:
-            show_mesh += raft_mesh
-
-        show_mesh.show(smooth=False, flags={"axis": True, "grid": True})
 
     process = subprocess.Popen(engine_args, stdout=subprocess.PIPE)
     for line in process.stdout:

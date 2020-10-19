@@ -12,8 +12,8 @@ class MeshPretransformer():
         ):
 
         matrix = numpy.identity(4)
-        matrix[:,1] = [0, 1 / math.tan(gantry_angle), 1, (machine_depth / 2) * (1 - math.cos(gantry_angle))]
-        matrix[:,2] = [0, - 1 / math.sin(gantry_angle), 0, machine_depth / 2]
+        matrix[1] = [0, 1 / math.tan(gantry_angle), 1, (machine_depth / 2) * (1 - math.cos(gantry_angle))]
+        matrix[2] = [0, 1 / math.sin(gantry_angle), 0, -machine_depth / 2]
 
         # The above magic transform matrix is composed as follows:
         """
