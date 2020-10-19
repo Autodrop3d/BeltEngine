@@ -183,7 +183,8 @@ def main():
         "-o", known_args["o"][0],
     ]
     for (key, value) in settings.items():
-        engine_args.extend(["-s", "%s=%s" % (key, value)])
+        if not key.startswith("beltengine_"):
+            engine_args.extend(["-s", "%s=%s" % (key, value)])
 
     engine_args.extend(["-l", temp_mesh_file_path])
 
