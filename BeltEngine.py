@@ -7,7 +7,6 @@ import sys
 import os
 import argparse
 import trimesh
-import shapely
 import math
 import tempfile
 import subprocess
@@ -30,7 +29,7 @@ stream_handler.setFormatter(logging_formatter)
 logger.addHandler(stream_handler)
 
 from SettingsParser import SettingsParser
-from SupportMeshCreator import SupportMeshCreator
+from MeshCreator import createSupportMesh, createRaftMesh
 from MeshPretransformer import MeshPretransformer
 from GcodePostProcessor import GcodePostProcessor
 
@@ -132,30 +131,25 @@ def main():
     support_mesh = None
     if support_enable:
         logger.info("Create support mesh")
-        support_mesh_creator = SupportMeshCreator(
+
+        support_mesh = createSupportMesh(
+            input_mesh,
             support_angle=settings_parser.getSettingValue("support_angle"),
             filter_upwards_facing_faces=True,
             down_vector=[0, -math.cos(math.radians(beltengine_support_gantry_angle_bias)), -math.sin(beltengine_support_gantry_angle_bias)],
             bottom_cut_off=settings_parser.getSettingValue("wall_line_width_0"),
             minimum_island_area=beltengine_support_minimum_island_area
         )
-
-        support_mesh = support_mesh_creator.createSupportMesh(input_mesh)
         support_mesh.visual.vertex_colors = [[0,255,255,255]] * len(support_mesh.vertices)
 
     raft_mesh = None
     if beltengine_raft_enable:
         logger.info("Create raft mesh")
-        raft_mesh_polygon = trimesh.path.polygons.projected(input_mesh.convex_hull, [0,1,0])
-        if beltengine_raft_margin > 0:
-            offset_raft_mesh_points = raft_mesh_polygon.exterior.parallel_offset(beltengine_raft_margin, side="left", resolution=5)
-            raft_mesh_polygon = shapely.geometry.Polygon(offset_raft_mesh_points)
-        elif beltengine_raft_margin < 0:
-            offset_raft_mesh_points = raft_mesh_polygon.exterior.parallel_offset(-beltengine_raft_margin, side="right", resolution=5)
-            raft_mesh_polygon = shapely.geometry.Polygon(offset_raft_mesh_points)
-        raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -beltengine_raft_thickness)
-        raft_mesh.vertices[:,[0,1,2]] = -raft_mesh.vertices[:,[1,2,0]]
-        raft_mesh.invert()
+        raft_mesh = createRaftMesh(
+            input_mesh,
+            raft_thickness=beltengine_raft_thickness,
+            raft_margin=beltengine_raft_margin
+        )
         raft_mesh.visual.vertex_colors = [[128,128,128,255]] * len(raft_mesh.vertices)
 
         translation_for_raft = trimesh.transformations.translation_matrix([
