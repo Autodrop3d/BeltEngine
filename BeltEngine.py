@@ -179,6 +179,7 @@ def main():
     engine_args = [
         engine_path,
         "slice",
+        "-v",
         "-j", os.path.join("resources","definitions","fdmprinter.def.json"),
         "-o", known_args["o"][0],
     ]
