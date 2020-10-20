@@ -16,7 +16,7 @@ class GcodePostProcessor():
         ):
 
         self._belt_wall_enable = belt_wall_enable
-        self._belt_wall_flow = belt_wall_flow/ 100
+        self._belt_wall_flow = belt_wall_flow / 100
         self._belt_wall_speed = belt_wall_speed * 60
         self._minimum_y = wall_line_width_0 * 0.6 #  0.5 would be non-tolerant
 
@@ -97,11 +97,11 @@ class GcodePostProcessor():
                     if self._belt_wall_flow != 1.0 and last_y is not None:
                         new_e = last_e + (e - last_e) * self._belt_wall_flow
                         line = re.sub(extrude_regex, " E%f" % new_e, line)
-                        line += " ; Adjusted E for belt wall\nG92 E%f ; Reset E to pre-compensated value" % e
+                        line = line.strip() + " ; Adjusted E for belt wall\nG92 E%f ; Reset E to pre-compensated value\n" % e
 
                     if f > self._belt_wall_speed:
                         g_type = int(line[1:2])
-                        line = "G%d F%d ; Belt wall speed\n%s\nG%d F%d ; Restored speed" % (g_type, self._belt_wall_speed, line, g_type, f)
+                        line = "G%d F%d ; Belt wall speed\n%s\nG%d F%d ; Restored speed\n" % (g_type, self._belt_wall_speed, line.strip(), g_type, f)
 
                     gcode_lines[line_number] = line
 
