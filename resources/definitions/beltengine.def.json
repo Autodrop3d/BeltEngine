@@ -46,7 +46,7 @@
                     "type": "int",
                     "unit": "°",
                     "default_value": 45,
-                    "value": "int(blackbelt_gantry_angle)",
+                    "value": "int(beltengine_gantry_angle)",
                     "minimum_value": "0",
                     "maximum_value": "90",
                     "settable_per_mesh": true,

@@ -95,11 +95,13 @@ def main():
     beltengine_support_minimum_island_area = settings_parser.getSettingValue("beltengine_support_minimum_island_area")
 
     settings_parser.setSettingValue("support_enable", "False")
-    settings_parser.setSettingValue("adhesion_type", "none")
+    settings_parser.setSettingValue("adhesion_type", "\"none\"")
     for key in ["layer_height", "layer_height_0"]:
         settings_parser.setSettingValue(key, settings_parser.getSettingValue(key) / math.sin(beltengine_gantry_angle))
-    for key in ["wall_0_material_flow", "wall_x_material_flow", "skin_material_flow", "roofing_material_flow", "infill_material_flow", "skirt_brim_material_flow", "support_material_flow", "support_roof_material_flow", "support_bottom_material_flow"]:
+    for key in ["material_flow", "prime_tower_flow"]:
         settings_parser.setSettingValue(key, settings_parser.getSettingValue(key) * math.sin(beltengine_gantry_angle))
+    settings_parser.evaluateLeafValues()
+    settings = settings_parser.getNonDefaultValues()
 
     mesh_pretransformer = MeshPretransformer(
         gantry_angle=beltengine_gantry_angle,
