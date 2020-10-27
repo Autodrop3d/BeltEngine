@@ -48,6 +48,11 @@ class SettingsParser():
             for key, value in settings:
                 self.setSettingValue(key, value)
 
+        SettingFunction.registerOperator("extruderValue", self._getValueInExtruder)
+        SettingFunction.registerOperator("extruderValues", self._getValuesInAllExtruders)
+        SettingFunction.registerOperator("resolveOrValue", self._getResolveOrValue)
+        SettingFunction.registerOperator("defaultExtruderPosition", self._getDefaultExtruderPosition)
+
     def getDefinition(self, key):
         for definition_file in self._definitions:
             definition = self._definitions[definition_file].getSettingDefinition(key)
@@ -65,8 +70,11 @@ class SettingsParser():
                     continue
                 if key in self._data:
                     continue
+
                 if "value" in definition:
                     self.setSettingValue(key, definition["value"])
+                else:
+                    self._data[key] = definition["default_value"]
 
     def getNonDefaultValues(self):
         return self._data
@@ -86,8 +94,6 @@ class SettingsParser():
         return None
 
     def setSettingValue(self, key, value):
-        # TODO: use dictionary of doom to convert legacy to current settings
-
         definition = self.getDefinition(key)
         if not definition:
             return
@@ -97,38 +103,21 @@ class SettingsParser():
         else:
             self._data[key] = SettingFunction(value)(self)
 
-    def _toFloatConversion(self, value):
-        if type(value) is float:
-            return value
-        elif type(value) is int:
-            return float(value)
+    # Gets the default extruder position of the currently active machine.
+    def _getDefaultExtruderPosition(self) -> str:
+        return "0"
 
-        value = value.replace(",", ".")
-        """Ensure that all , are replaced with . (so they are seen as floats)"""
+    # Gets the given setting key from the given extruder position.
+    def _getValueInExtruder(self, extruder_position: int, property_key: str) -> Any:
+        return self.getSettingValue(property_key)
 
-        def stripLeading0(matchobj: Match[str]) -> str:
-            return matchobj.group(0).lstrip("0")
+    # Gets all extruder values as a list for the given property.
+    def _getValuesInAllExtruders(self, property_key: str) -> List[Any]:
+        return [self.getSettingValue(property_key)]
 
-        regex_pattern = r"(?<!\.|\w|\d)0+(\d+)"
-        """Literal eval does not like "02" as a value, but users see this as "2"."""
-        """We therefore look numbers with leading "0", provided they are not used in variable names"""
-        """example: "test02 * 20" should not be changed, but "test * 02 * 20" should be changed (into "test * 2 * 20")"""
-        value = re.sub(regex_pattern, stripLeading0, value)
-
-        try:
-            return ast.literal_eval(value)
-        except:
-            return 0
-
-    def _toIntConversion(self, value):
-        if type(value) is int:
-            return value
-        elif type(value) is float:
-            return int(value)
-        try:
-            return ast.literal_eval(value)
-        except SyntaxError:
-            return 0
+    # Get the resolve value or value for a given key.
+    def _getResolveOrValue(self, property_key: str) -> Any:
+        return self.getSettingValue(property_key)
 
 
 class SettingsDefinitionFile():
