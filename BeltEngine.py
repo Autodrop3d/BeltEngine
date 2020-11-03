@@ -125,7 +125,7 @@ def main():
     input_mesh.apply_transform(trimesh.transformations.translation_matrix([
         (input_bounds[0][0] + input_bounds[1][0]) / -2,
         -input_bounds[0][1],
-        -input_bounds[0][2] - (input_bounds[1][2] - input_bounds[0][2])
+        -input_bounds[0][2]
     ]))
 
     input_mesh.fix_normals()
