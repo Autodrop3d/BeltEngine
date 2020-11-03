@@ -58,3 +58,8 @@ Basic syntax:
 ```
 
 Setting values specified on the command line always override what is set in configuration files, even if those configuration files are specified after the command-line value.
+
+## Example for Blackbelt 3D printer
+```
+(venv) python BeltEngine.py -o output.gcode model.stl -c settings/blackbelt.cfg.ini -c settings/bb_04mm.cfg.ini -s beltengine_gantry_angle=35 -s support_enable=True
+```
