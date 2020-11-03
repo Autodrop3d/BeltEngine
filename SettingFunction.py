@@ -1,6 +1,9 @@
 # Copyright (c) 2020 Ultimaker B.V.
 # Uranium is released under the terms of the LGPLv3 or higher.
 
+# Copyright (c) 2020 Autodrop3D and Aldo Hoeben / fieldOfView
+# BeltEngine is released under the terms of the AGPLv3 or higher.
+
 import ast
 # noinspection PyUnresolvedReferences
 import base64  # Imported here so it can be used easily by the setting functions.
