@@ -20,7 +20,7 @@
             "icon": "category_machine",
             "children":
             {
-                "beltengine_gantry_angle":
+                "blackbelt_gantry_angle":
                 {
                     "label": "Gantry Angle",
                     "description": "The angle of the gantry relative to the build plate. Match this setting with the current printer configuration.",
@@ -38,7 +38,7 @@
                     "settable_per_extruder": false
                 },
 
-                "beltengine_support_gantry_angle_bias":
+                "blackbelt_support_gantry_angle_bias":
                 {
                     "label": "Support Gantry Angle Bias",
                     "description": "Favor placement of support structures towards the front of the print, for use with belt-style printers.",
@@ -46,14 +46,14 @@
                     "type": "int",
                     "unit": "°",
                     "default_value": 45,
-                    "value": "int(beltengine_gantry_angle)",
+                    "value": "int(blackbelt_gantry_angle)",
                     "minimum_value": "0",
                     "maximum_value": "90",
                     "settable_per_mesh": true,
                     "settable_per_extruder": false
                 },
 
-                "beltengine_support_minimum_island_area":
+                "blackbelt_support_minimum_island_area":
                 {
                     "label": "Minimum Support Area",
                     "description": "Minimum area in the X/Y directions of a small area which will be supported. This prevents very small support towers which could fall over.",
@@ -66,7 +66,7 @@
                     "settable_per_extruder": false
                 },
 
-                "beltengine_raft_enable":
+                "blackbelt_raft":
                 {
                     "label": "Print Raft",
                     "description": "Adds a thick layer below the model to help the adhesion to the belt and to improve stability during printing.",
@@ -75,7 +75,7 @@
                     "settable_per_mesh": false,
                     "settable_per_extruder": false
                 },
-                "beltengine_raft_margin":
+                "blackbelt_raft_margin":
                 {
                     "label": "Raft Extra Margin",
                     "description": "If the raft is enabled, this is the extra raft area around the model which is also given a raft. Increasing this margin will create a stronger raft while using more material and leaving less area for your print.",
@@ -84,11 +84,11 @@
                     "default_value": 0,
                     "minimum_value": "0",
                     "maximum_value_warning": "20",
-                    "enabled": "beltengine_raft_enable",
+                    "enabled": "blackbelt_raft",
                     "settable_per_mesh": false,
                     "settable_per_extruder": false
                 },
-                "beltengine_raft_thickness":
+                "blackbelt_raft_thickness":
                 {
                     "label": "Raft Thickness",
                     "description": "Layer thickness of the base raft layer. This should be a thick layer which sticks firmly to the printer build plate.",
@@ -98,11 +98,11 @@
                     "value": "2 * line_width",
                     "minimum_value": "line_width",
                     "minimum_value_warning": "2 * line_width",
-                    "enabled": "beltengine_raft_enable",
+                    "enabled": "blackbelt_raft",
                     "settable_per_mesh": false,
                     "settable_per_extruder": false
                 },
-                "beltengine_raft_gap":
+                "blackbelt_raft_gap":
                 {
                     "label": "Raft Air Gap",
                     "description": "The gap between the raft and the bottom wall of the model. Makes it easier to peel off the raft.",
@@ -112,11 +112,11 @@
                     "value": "0.75 * line_width",
                     "minimum_value": "0",
                     "maximum_value_warning": "1.5 * min(extruderValues('machine_nozzle_size'))",
-                    "enabled": "beltengine_raft_enable",
+                    "enabled": "blackbelt_raft",
                     "settable_per_mesh": false,
                     "settable_per_extruder": false
                 },
-                "beltengine_raft_speed":
+                "blackbelt_raft_speed":
                 {
                     "label": "Raft Speed",
                     "description": "The speed at which the raft is printed. Printing the raft at a lower speed improves adhesion.",
@@ -127,11 +127,11 @@
                     "maximum_value_warning": "150",
                     "default_value": 30,
                     "value": "speed_wall_0 * 0.6",
-                    "enabled": "beltengine_raft_enable",
+                    "enabled": "blackbelt_raft",
                     "settable_per_mesh": false,
                     "settable_per_extruder": false
                 },
-                "beltengine_raft_flow":
+                "blackbelt_raft_flow":
                 {
                     "label": "Raft Flow",
                     "description": "The extrusion multiplier for the raft.",
@@ -143,21 +143,21 @@
                     "default_value": 100,
                     "value": "material_flow",
                     "resolve": "extruderValue(0, 'blackbelt_raft_flow')",
-                    "enabled": "beltengine_raft_enable",
+                    "enabled": "blackbelt_raft",
                     "settable_per_mesh": false,
                     "settable_per_extruder": false
                 },
-                "beltengine_belt_wall_enable":
+                "blackbelt_belt_wall_enabled":
                 {
                     "label": "Adjust Belt Wall",
                     "description": "Adjust settings for the wall touching the belt.",
                     "type": "bool",
                     "default_value": false,
-                    "resolve": "extruderValue(0, 'blackbelt_belt_wall_enabled')",
+                    "resolve": "extruderValue(0, 'blackbelt_belt_wall_enabledd')",
                     "settable_per_mesh": false,
                     "settable_per_extruder": false
                 },
-                "beltengine_belt_wall_speed":
+                "blackbelt_belt_wall_speed":
                 {
                     "label": "Belt Wall Speed",
                     "description": "The speed at which the walls touching the belt are printed. Printing the belt layer at a lower speed improves adhesion.",
@@ -169,11 +169,11 @@
                     "default_value": 30,
                     "value": "speed_wall_0 * 0.6",
                     "resolve": "min(extruderValues('blackbelt_belt_wall_speed'))",
-                    "enabled": "beltengine_belt_wall_enable",
+                    "enabled": "blackbelt_belt_wall_enabled",
                     "settable_per_mesh": false,
                     "settable_per_extruder": false
                 },
-                "beltengine_belt_wall_flow":
+                "blackbelt_belt_wall_flow":
                 {
                     "label": "Belt Wall Flow",
                     "description": "The extrusion multiplier for the walls touching the belt. This multiplier acts on top of the Material Flow multiplier.",
@@ -184,7 +184,7 @@
                     "maximum_value_warning": "150",
                     "default_value": 100,
                     "resolve": "min(extruderValues('blackbelt_belt_wall_flow'))",
-                    "enabled": "beltengine_belt_wall_enable",
+                    "enabled": "blackbelt_belt_wall_enabled",
                     "settable_per_mesh": false,
                     "settable_per_extruder": false
                 }
