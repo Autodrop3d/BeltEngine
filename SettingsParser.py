@@ -35,12 +35,12 @@ class SettingsParser():
             logger.debug("Reading settings from %s" % config_file_path)
             with open(config_file_path) as config_file_pointer:
                 config_file_content = config_file_pointer.read()
-            if "[profile]" not in config_file_content:
-                config_file_content = "[profile]\n" + config_file_content
+            if "[values]" not in config_file_content:
+                config_file_content = "[values]\n" + config_file_content
 
             config_parser = configparser.ConfigParser()
             config_parser.read_string(config_file_content)
-            for key, value in OrderedDict(config_parser["profile"]).items():
+            for key, value in OrderedDict(config_parser["values"]).items():
                 self.setSettingValue(key, value)
 
         if commandline_settings:
