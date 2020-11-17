@@ -55,6 +55,8 @@ def main():
     # get CuraEngine executable
     if (known_args["x"]):
         engine_path = known_args["x"]
+        print("engine path is:  ")
+        print(engine_path)
     else:
         if sys.platform == "win32":
             engine_path = "bin/windows/CuraEngine.exe"
