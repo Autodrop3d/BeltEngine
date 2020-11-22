@@ -1,7 +1,7 @@
 sudo apt update
 
 
-sudo apt install python3
+sudo apt install python3 -y
 sudo apt install libspatialindex-dev -y
 sudo apt install libgeos-dev -y
 sudo apt install python3-numpy -y
