@@ -54,7 +54,7 @@ Configuration files are read "in order", so setting for which values are specifi
 ### Command-line values:
 Basic syntax:
 ```
-(venv) python BeltEngine.py -o output.gcode model.stl -s infill_density=25 -s support_enable=True
+(venv) python BeltEngine.py -o output.gcode model.stl -s infill_sparse_density=25 -s support_enable=True
 ```
 
 Setting values specified on the command line always override what is set in configuration files, even if those configuration files are specified after the command-line value.
