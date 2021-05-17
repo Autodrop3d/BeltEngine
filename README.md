@@ -1,5 +1,7 @@
 # BeltEngine
-A commandline slicer for belt-style printers utilising CuraEngine
+A commandline slicer for belt-style printers utilising CuraEngine.
+
+Ported code from blackbelt slicer by FieldOfView
 
 ## Usage
 It is recommended to use the script from a python virtual environment. The virtual environment can be created like this:
