@@ -17,7 +17,7 @@ logger = logging.getLogger("BeltEngine")
 class SettingsParser():
     def __init__(self, config_files=[], commandline_settings=[]):
         self._definitions = OrderedDict()
-        definitions_folder = os.path.abspath(os.path.join("resources", "definitions"))
+        definitions_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "definitions")
         for entry in os.scandir(definitions_folder):
             if entry.path.endswith(".def.json") and entry.is_file():
                 self._definitions[os.path.basename(entry.path)] = SettingsDefinitionFile(entry.path)

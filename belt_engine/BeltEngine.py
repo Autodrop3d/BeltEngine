@@ -54,7 +54,10 @@ def main():
 
     # get CuraEngine executable
     if (known_args["x"]):
-        engine_path = known_args["x"][0]
+        if os.path.isabs(known_args["x"][0]):
+            engine_path = known_args["x"][0]
+        else:             
+            engine_path = os.path.abspath(known_args["x"][0])
     else:
         if sys.platform == "win32":
             engine_path = "bin/windows/CuraEngine.exe"
@@ -65,7 +68,7 @@ def main():
         else:
             logger.error("Unsupported platform: %s" % sys.platform)
             return 1
-    engine_path = os.path.abspath(engine_path)
+        engine_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), engine_path)
     if not os.path.exists(engine_path):
         logger.error("CuraEngine executable not found: %s" % engine_path)
         return 1
@@ -182,7 +185,7 @@ def main():
         engine_path,
         "slice",
         "-v",
-        "-j", os.path.join("resources","definitions","fdmprinter.def.json"),
+        "-j", os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources","definitions","fdmprinter.def.json"),
         "-o", known_args["o"][0],
     ]
     for (key, value) in settings.items():
