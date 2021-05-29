@@ -26,7 +26,7 @@ The rest of the python dependencies can be installed using the same pip command 
 
 The basic usage of the script is as follows:
 ```
-(venv) python BeltEngine.py -o output.gcode model.stl
+(venv) python3 -m belt_engine.BeltEngine -o output.gcode model.stl
 ```
 This uses the settings defined in the .def.json files in the `resources/definitions` folder.
 

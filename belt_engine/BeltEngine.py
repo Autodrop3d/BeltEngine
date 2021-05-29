@@ -28,10 +28,10 @@ stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(logging_formatter)
 logger.addHandler(stream_handler)
 
-from SettingsParser import SettingsParser
-from MeshCreator import createSupportMesh, createRaftMesh
-from MeshPretransformer import MeshPretransformer
-from GcodePostProcessor import GcodePostProcessor
+from .SettingsParser import SettingsParser
+from .MeshCreator import createSupportMesh, createRaftMesh
+from .MeshPretransformer import MeshPretransformer
+from .GcodePostProcessor import GcodePostProcessor
 
 def flipYZ(tri_mesh):
     tri_mesh.vertices[:,[2,1]] = tri_mesh.vertices[:,[1,2]]

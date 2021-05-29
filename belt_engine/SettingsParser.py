@@ -9,7 +9,7 @@ import re
 from collections import OrderedDict
 from typing import Any, List, Dict, Callable, Match, Set, Union, Optional
 
-from SettingFunction import SettingFunction
+from .SettingFunction import SettingFunction
 
 import logging
 logger = logging.getLogger("BeltEngine")
