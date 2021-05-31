@@ -53,6 +53,7 @@ def main():
         logger.setLevel(logging.DEBUG)
 
     # get CuraEngine executable
+    lib_path = ""
     if (known_args["x"]):
         if os.path.isabs(known_args["x"][0]):
             engine_path = known_args["x"][0]
@@ -62,13 +63,20 @@ def main():
         if sys.platform == "win32":
             engine_path = "bin/windows/CuraEngine.exe"
         elif sys.platform == "linux":
-            engine_path = "bin/linux/CuraEngine"
+            if os.uname()[4][:3] == "arm":
+                engine_path = "bin/armLinux/CuraEngine"
+                lib_path = "bin/armLinux/lib"
+            else:
+                engine_path = "bin/linux/CuraEngine"
+                lib_path = "bin/linux/lib"
         elif sys.platform == "darwin":
             engine_path = "bin/osx/CuraEngine"
         else:
             logger.error("Unsupported platform: %s" % sys.platform)
             return 1
         engine_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), engine_path)
+        if lib_path:
+            lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), lib_path)
     if not os.path.exists(engine_path):
         logger.error("CuraEngine executable not found: %s" % engine_path)
         return 1
@@ -222,7 +230,11 @@ def main():
 
     logger.debug(engine_args)
 
-    process = subprocess.Popen(engine_args, stdout=subprocess.PIPE)
+    env = os.environ.copy()
+    if lib_path:
+        env["LD_LIBRARY_PATH"] = lib_path
+        logger.info("Adding lib path %s to env" % env["LD_LIBRARY_PATH"])
+    process = subprocess.Popen(engine_args, stdout=subprocess.PIPE, env=env)
     for line in process.stdout:
         logger.debug(line)
 
