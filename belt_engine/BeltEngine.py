@@ -39,6 +39,18 @@ def flipYZ(tri_mesh):
 def tempFileName():
     return os.path.join(tempfile.gettempdir(), next(tempfile._get_candidate_names())) + ".stl"
 
+def check_dependancies():
+    posible_solutions = []
+    try:
+        import numpy
+    except Exception:
+        posible_solutions.append("Install `sudo apt-get install libatlas-base-dev`")
+    try:
+        from shapely import geos
+    except Exception:
+        posible_solutions.append("Install `sudo apt-get install libgeos-dev`")
+    return posible_solutions
+
 def main():
     parser = argparse.ArgumentParser(description="Belt-style printer pre- and postprocessor for CuraEngine.")
     parser.add_argument("-v", action="store_true", help="show verbose messages")
@@ -47,6 +59,12 @@ def main():
     parser.add_argument("-s", type=str, nargs=1, action="append", help="settings")
     parser.add_argument("-o", type=str, nargs=1, help="gcode output file")
     parser.add_argument("model.stl", type=str, nargs=1, help="stl model file to slice")
+
+    possible_solutions = check_dependancies()
+    if possible_solutions:
+        for solution in possible_solutions:
+            print("* %s" % solution, file=sys.stderr)
+        return 1
 
     known_args = vars(parser.parse_known_args()[0])
     if (known_args["v"]):
