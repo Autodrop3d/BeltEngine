@@ -27,10 +27,6 @@ stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(logging_formatter)
 logger.addHandler(stream_handler)
 
-from .SettingsParser import SettingsParser
-from .MeshCreator import createSupportMesh, createRaftMesh
-from .MeshPretransformer import MeshPretransformer
-from .GcodePostProcessor import GcodePostProcessor
 
 def flipYZ(tri_mesh):
     tri_mesh.vertices[:,[2,1]] = tri_mesh.vertices[:,[1,2]]
@@ -38,7 +34,7 @@ def flipYZ(tri_mesh):
 def tempFileName():
     return os.path.join(tempfile.gettempdir(), next(tempfile._get_candidate_names())) + ".stl"
 
-def check_dependancies():
+def check_dependencies():
     posible_solutions = []
     try:
         import numpy
@@ -51,6 +47,21 @@ def check_dependancies():
     return posible_solutions
 
 def main():
+    # Check for dependency errors
+    possible_solutions = check_dependencies()
+    if possible_solutions:
+        for solution in possible_solutions:
+            print("* %s" % solution, file=sys.stderr)
+        return 1
+
+    # Import
+    import trimesh
+
+    from .SettingsParser import SettingsParser
+    from .MeshCreator import createSupportMesh, createRaftMesh
+    from .MeshPretransformer import MeshPretransformer
+    from .GcodePostProcessor import GcodePostProcessor
+
     parser = argparse.ArgumentParser(description="Belt-style printer pre- and postprocessor for CuraEngine.")
     parser.add_argument("-v", action="store_true", help="show verbose messages")
     parser.add_argument("-x", type=str, nargs=1, help="CuraEngine executable path")
@@ -58,12 +69,6 @@ def main():
     parser.add_argument("-s", type=str, nargs=1, action="append", help="settings")
     parser.add_argument("-o", type=str, nargs=1, help="gcode output file")
     parser.add_argument("model.stl", type=str, nargs=1, help="stl model file to slice")
-
-    possible_solutions = check_dependancies()
-    if possible_solutions:
-        for solution in possible_solutions:
-            print("* %s" % solution, file=sys.stderr)
-        return 1
 
     known_args = vars(parser.parse_known_args()[0])
     if (known_args["v"]):
@@ -142,8 +147,7 @@ def main():
         return 1
 
     logger.info("Loading mesh %s" % mesh_file_path)
-    
-    import trimesh
+
     input_mesh = trimesh.load(mesh_file_path)
     flipYZ(input_mesh)
     input_mesh.vertices[:,[2]] = -input_mesh.vertices[:,[2]]
