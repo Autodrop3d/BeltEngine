@@ -6,7 +6,6 @@
 import sys
 import os
 import argparse
-import trimesh
 import math
 import tempfile
 import subprocess
@@ -143,6 +142,8 @@ def main():
         return 1
 
     logger.info("Loading mesh %s" % mesh_file_path)
+    
+    import trimesh
     input_mesh = trimesh.load(mesh_file_path)
     flipYZ(input_mesh)
     input_mesh.vertices[:,[2]] = -input_mesh.vertices[:,[2]]
