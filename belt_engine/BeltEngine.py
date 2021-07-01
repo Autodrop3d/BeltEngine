@@ -6,7 +6,6 @@
 import sys
 import os
 import argparse
-import trimesh
 import math
 import tempfile
 import subprocess
@@ -28,10 +27,6 @@ stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(logging_formatter)
 logger.addHandler(stream_handler)
 
-from SettingsParser import SettingsParser
-from MeshCreator import createSupportMesh, createRaftMesh
-from MeshPretransformer import MeshPretransformer
-from GcodePostProcessor import GcodePostProcessor
 
 def flipYZ(tri_mesh):
     tri_mesh.vertices[:,[2,1]] = tri_mesh.vertices[:,[1,2]]
@@ -39,7 +34,34 @@ def flipYZ(tri_mesh):
 def tempFileName():
     return os.path.join(tempfile.gettempdir(), next(tempfile._get_candidate_names())) + ".stl"
 
+def check_dependencies():
+    posible_solutions = []
+    try:
+        import numpy
+    except Exception:
+        posible_solutions.append("Install `sudo apt-get install libatlas-base-dev`")
+    try:
+        from shapely import geos
+    except Exception:
+        posible_solutions.append("Install `sudo apt-get install libgeos-dev`")
+    return posible_solutions
+
 def main():
+    # Check for dependency errors
+    possible_solutions = check_dependencies()
+    if possible_solutions:
+        for solution in possible_solutions:
+            print("* %s" % solution, file=sys.stderr)
+        return 1
+
+    # Import
+    import trimesh
+
+    from .SettingsParser import SettingsParser
+    from .MeshCreator import createSupportMesh, createRaftMesh
+    from .MeshPretransformer import MeshPretransformer
+    from .GcodePostProcessor import GcodePostProcessor
+
     parser = argparse.ArgumentParser(description="Belt-style printer pre- and postprocessor for CuraEngine.")
     parser.add_argument("-v", action="store_true", help="show verbose messages")
     parser.add_argument("-x", type=str, nargs=1, help="CuraEngine executable path")
@@ -53,19 +75,30 @@ def main():
         logger.setLevel(logging.DEBUG)
 
     # get CuraEngine executable
+    lib_path = ""
     if (known_args["x"]):
-        engine_path = known_args["x"][0]
+        if os.path.isabs(known_args["x"][0]):
+            engine_path = known_args["x"][0]
+        else:             
+            engine_path = os.path.abspath(known_args["x"][0])
     else:
         if sys.platform == "win32":
             engine_path = "bin/windows/CuraEngine.exe"
         elif sys.platform == "linux":
-            engine_path = "bin/linux/CuraEngine"
+            if os.uname()[4][:3] == "arm":
+                engine_path = "bin/armLinux/CuraEngine"
+                lib_path = "bin/armLinux/lib"
+            else:
+                engine_path = "bin/linux/CuraEngine"
+                lib_path = "bin/linux/lib"
         elif sys.platform == "darwin":
             engine_path = "bin/osx/CuraEngine"
         else:
             logger.error("Unsupported platform: %s" % sys.platform)
             return 1
-    engine_path = os.path.abspath(engine_path)
+        engine_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), engine_path)
+        if lib_path:
+            lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), lib_path)
     if not os.path.exists(engine_path):
         logger.error("CuraEngine executable not found: %s" % engine_path)
         return 1
@@ -114,6 +147,7 @@ def main():
         return 1
 
     logger.info("Loading mesh %s" % mesh_file_path)
+
     input_mesh = trimesh.load(mesh_file_path)
     flipYZ(input_mesh)
     input_mesh.vertices[:,[2]] = -input_mesh.vertices[:,[2]]
@@ -182,7 +216,7 @@ def main():
         engine_path,
         "slice",
         "-v",
-        "-j", os.path.join("resources","definitions","fdmprinter.def.json"),
+        "-j", os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources","definitions","fdmprinter.def.json"),
         "-o", known_args["o"][0],
     ]
     for (key, value) in settings.items():
@@ -219,7 +253,11 @@ def main():
 
     logger.debug(engine_args)
 
-    process = subprocess.Popen(engine_args, stdout=subprocess.PIPE)
+    env = os.environ.copy()
+    if lib_path:
+        env["LD_LIBRARY_PATH"] = lib_path
+        logger.info("Adding lib path %s to env" % env["LD_LIBRARY_PATH"])
+    process = subprocess.Popen(engine_args, stdout=subprocess.PIPE, env=env)
     for line in process.stdout:
         logger.debug(line)
 
