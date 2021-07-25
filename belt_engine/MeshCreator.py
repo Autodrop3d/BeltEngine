@@ -98,6 +98,7 @@ def createRaftMesh(
         raft_mesh_polygon = shapely.geometry.Polygon(offset_raft_mesh_points)
     raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -raft_thickness)
     raft_mesh.vertices[:,[0,1,2]] = -raft_mesh.vertices[:,[1,2,0]]
+    raft_mesh.fix_normals()
     raft_mesh.invert()
 
     return raft_mesh

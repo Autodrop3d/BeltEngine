@@ -191,7 +191,7 @@ def main():
         translation_for_raft = trimesh.transformations.translation_matrix([
             0, blackbelt_raft_thickness + blackbelt_raft_gap, 0
         ])
-        input_mesh.apply_transform(translation_for_raft)
+        #input_mesh.apply_transform(translation_for_raft)
         if support_mesh:
             support_mesh.apply_transform(translation_for_raft)
 
