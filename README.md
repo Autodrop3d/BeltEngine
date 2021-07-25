@@ -3,6 +3,18 @@ A commandline slicer for belt-style printers utilising CuraEngine.
 
 Ported code from blackbelt slicer by FieldOfView
 
+
+## Buil instructions for pip package
+1) Install poetry in system,
+2) cd into the project directly and create venv using `python3 -m venv venv`
+3) Activate virtualenv with `source venv/bin/activate`
+4) Run poetry install (this will install development version as executable in the virtualenv. That means you can just change the code and run `belt-engine` and changes will take effect. Usefull for development). I did not test this in rpi (YMMV)
+5) Change the version in pyproject file.
+6) Run `poetry build`. This will create packages inside `dist` folder.
+
+
+
+
 ## Usage
 It is recommended to use the script from a python virtual environment. The virtual environment can be created like this:
 ```
