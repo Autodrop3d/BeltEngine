@@ -15,6 +15,19 @@ Ported code from blackbelt slicer by FieldOfView
 
 
 
+```
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
+source $HOME/.poetry/env
+python3 -m venv venv
+source venv/bin/activate
+poetry build
+cd dist
+
+```
+
+
+
+
 ## Usage
 It is recommended to use the script from a python virtual environment. The virtual environment can be created like this:
 ```
