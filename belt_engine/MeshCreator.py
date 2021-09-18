@@ -83,6 +83,15 @@ def createSupportMesh(
 
     return support_mesh
 
+def isOnPi():
+    try:
+        with open('/sys/firmware/devicetree/base/model', 'r') as m:
+            if 'raspberry pi' in m.read().lower():
+                return True
+    except FileNotFoundError:
+        pass
+    return False
+
 def createRaftMesh(
         tri_mesh,
         raft_thickness=0.1,
@@ -98,6 +107,11 @@ def createRaftMesh(
         raft_mesh_polygon = shapely.geometry.Polygon(offset_raft_mesh_points)
     raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -raft_thickness)
     raft_mesh.vertices[:,[0,1,2]] = -raft_mesh.vertices[:,[1,2,0]]
+    if isOnPi():
+        print("using pi")
+        raft_mesh.vertices[:, [0, 1, 2]] = -raft_mesh.vertices[:, [0, 1, 2]]
+        raft_mesh.vertices[:, [1]] = numpy.subtract(raft_mesh.vertices[:, [1]], float(raft_thickness/2))
+
     raft_mesh.fix_normals()
     raft_mesh.invert()
 
