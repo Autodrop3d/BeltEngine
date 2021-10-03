@@ -111,6 +111,8 @@ def createRaftMesh(
         print("using pi")
         raft_mesh.vertices[:, [0, 1, 2]] = -raft_mesh.vertices[:, [0, 1, 2]]
         raft_mesh.vertices[:, [1]] = numpy.subtract(raft_mesh.vertices[:, [1]], float(raft_thickness/2))
+        translation_for_raft = trimesh.transformations.translation_matrix([0, 0.6, 0])
+        raft_mesh.apply_transform(translation_for_raft)
 
     raft_mesh.fix_normals()
     raft_mesh.invert()
