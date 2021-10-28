@@ -90,3 +90,10 @@ Setting values specified on the command line always override what is set in conf
 ```
 (venv) python BeltEngine.py -o output.gcode model.stl -c settings/blackbelt.cfg.ini -c settings/bb_04mm.cfg.ini -s beltengine_gantry_angle=35 -s support_enable=True
 ```
+
+
+
+
+Development effort sponsored by:
+Autodrop3d
+Polar3d
