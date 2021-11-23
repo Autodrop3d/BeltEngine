@@ -112,34 +112,47 @@ def main():
     # get belt slicing settings
     blackbelt_gantry_angle = math.radians(float(settings_parser.getSettingValue("blackbelt_gantry_angle")))
 
-    blackbelt_raft = settings_parser.getSettingValue("blackbelt_raft")
-    blackbelt_raft_margin = settings_parser.getSettingValue("blackbelt_raft_margin")
-    blackbelt_raft_thickness = settings_parser.getSettingValue("blackbelt_raft_thickness")
-    blackbelt_raft_gap = settings_parser.getSettingValue("blackbelt_raft_gap")
-    blackbelt_raft_speed = settings_parser.getSettingValue("blackbelt_raft_speed")
-    blackbelt_raft_flow = settings_parser.getSettingValue("blackbelt_raft_flow") * math.sin(blackbelt_gantry_angle)
+    #if this is not set within the config it seems to default to 45 deg
+    raw_gantry_angle = float(settings_parser.getSettingValue("blackbelt_gantry_angle"))
 
-    blackbelt_belt_wall_enabled = settings_parser.getSettingValue("blackbelt_belt_wall_enabled")
-    blackbelt_belt_wall_speed = settings_parser.getSettingValue("blackbelt_belt_wall_speed")
-    blackbelt_belt_wall_flow = settings_parser.getSettingValue("blackbelt_belt_wall_flow") * math.sin(blackbelt_gantry_angle)
+    logger.info("Gantry Angle: %s" % raw_gantry_angle)
 
-    support_enable = settings_parser.getSettingValue("support_enable")
-    blackbelt_support_gantry_angle_bias = math.radians(settings_parser.getSettingValue("blackbelt_support_gantry_angle_bias"))
-    blackbelt_support_minimum_island_area = settings_parser.getSettingValue("blackbelt_support_minimum_island_area")
+    #if its not set lets go with 90
+    if not raw_gantry_angle:
+        raw_gantry_angle = 90
 
-    settings_parser.setSettingValue("support_enable", "False")
-    settings_parser.setSettingValue("adhesion_type", "\"none\"")
-    for key in ["layer_height", "layer_height_0"]:
-        settings_parser.setSettingValue(key, str(settings_parser.getSettingValue(key) / math.sin(blackbelt_gantry_angle)))
-    for key in ["material_flow", "prime_tower_flow"]:
-        settings_parser.setSettingValue(key, str(settings_parser.getSettingValue(key) * math.sin(blackbelt_gantry_angle)))
+    #this is the next area for specifics for belt
+
+    if raw_gantry_angle < 90:
+        blackbelt_raft = settings_parser.getSettingValue("blackbelt_raft")
+        blackbelt_raft_margin = settings_parser.getSettingValue("blackbelt_raft_margin")
+        blackbelt_raft_thickness = settings_parser.getSettingValue("blackbelt_raft_thickness")
+        blackbelt_raft_gap = settings_parser.getSettingValue("blackbelt_raft_gap")
+        blackbelt_raft_speed = settings_parser.getSettingValue("blackbelt_raft_speed")
+        blackbelt_raft_flow = settings_parser.getSettingValue("blackbelt_raft_flow") * math.sin(blackbelt_gantry_angle)
+
+        blackbelt_belt_wall_enabled = settings_parser.getSettingValue("blackbelt_belt_wall_enabled")
+        blackbelt_belt_wall_speed = settings_parser.getSettingValue("blackbelt_belt_wall_speed")
+        blackbelt_belt_wall_flow = settings_parser.getSettingValue("blackbelt_belt_wall_flow") * math.sin(blackbelt_gantry_angle)
+
+        support_enable = settings_parser.getSettingValue("support_enable")
+        blackbelt_support_gantry_angle_bias = math.radians(settings_parser.getSettingValue("blackbelt_support_gantry_angle_bias"))
+        blackbelt_support_minimum_island_area = settings_parser.getSettingValue("blackbelt_support_minimum_island_area")
+
+        settings_parser.setSettingValue("support_enable", "False")
+        settings_parser.setSettingValue("adhesion_type", "\"none\"")
+        for key in ["layer_height", "layer_height_0"]:
+            settings_parser.setSettingValue(key, str(settings_parser.getSettingValue(key) / math.sin(blackbelt_gantry_angle)))
+        for key in ["material_flow", "prime_tower_flow"]:
+            settings_parser.setSettingValue(key, str(settings_parser.getSettingValue(key) * math.sin(blackbelt_gantry_angle)))
+
+        mesh_pretransformer = MeshPretransformer(
+            gantry_angle=blackbelt_gantry_angle,
+            machine_depth=settings_parser.getSettingValue("machine_depth")
+        )
+
     settings_parser.evaluateLeafValues()
     settings = settings_parser.getNonDefaultValues()
-
-    mesh_pretransformer = MeshPretransformer(
-        gantry_angle=blackbelt_gantry_angle,
-        machine_depth=settings_parser.getSettingValue("machine_depth")
-    )
 
     mesh_file_path = os.path.abspath(known_args["model.stl"][0])
     if not os.path.exists(mesh_file_path):
@@ -149,67 +162,71 @@ def main():
     logger.info("Loading mesh %s" % mesh_file_path)
 
     input_mesh = trimesh.load(mesh_file_path)
-    flipYZ(input_mesh)
-    input_mesh.vertices[:,[2]] = -input_mesh.vertices[:,[2]]
 
-    input_bounds = input_mesh.bounds
-    input_mesh.visual.vertex_colors = [[255,201,36,255]] * len(input_mesh.vertices)
+    #this is the next area for specifics for belt
+    if raw_gantry_angle < 90:
+        flipYZ(input_mesh)
+        input_mesh.vertices[:,[2]] = -input_mesh.vertices[:,[2]]
+        input_bounds = input_mesh.bounds
+        input_mesh.visual.vertex_colors = [[255,201,36,255]] * len(input_mesh.vertices)
 
-    logger.info("Moving mesh to the start of the belt")
-    input_mesh.apply_transform(trimesh.transformations.translation_matrix([
-        (input_bounds[0][0] + input_bounds[1][0]) / -2,
-        -input_bounds[0][1],
-        -input_bounds[0][2]
-    ]))
+        logger.info("Moving mesh to the start of the belt")
+        input_mesh.apply_transform(trimesh.transformations.translation_matrix([
+            (input_bounds[0][0] + input_bounds[1][0]) / -2,
+            -input_bounds[0][1],
+            -input_bounds[0][2]
+        ]))
 
-    input_mesh.fix_normals()
+        input_mesh.fix_normals()
 
-    support_mesh = None
-    if support_enable:
-        logger.info("Create support mesh")
-
-        support_mesh = createSupportMesh(
-            input_mesh,
-            support_angle=settings_parser.getSettingValue("support_angle"),
-            filter_upwards_facing_faces=True,
-            down_vector=[0, -math.cos(math.radians(blackbelt_support_gantry_angle_bias)), -math.sin(blackbelt_support_gantry_angle_bias)],
-            bottom_cut_off=settings_parser.getSettingValue("wall_line_width_0"),
-            minimum_island_area=blackbelt_support_minimum_island_area
-        )
-        support_mesh.visual.vertex_colors = [[0,255,255,255]] * len(support_mesh.vertices)
-
-    raft_mesh = None
-    if blackbelt_raft:
-        logger.info("Create raft mesh")
-        raft_mesh = createRaftMesh(
-            input_mesh,
-            raft_thickness=blackbelt_raft_thickness,
-            raft_margin=blackbelt_raft_margin
-        )
-        raft_mesh.visual.vertex_colors = [[128,128,128,255]] * len(raft_mesh.vertices)
-
-        translation_for_raft = trimesh.transformations.translation_matrix([
-            0, blackbelt_raft_thickness + blackbelt_raft_gap, 0
-        ])
-        #input_mesh.apply_transform(translation_for_raft)
-        if support_mesh:
-            support_mesh.apply_transform(translation_for_raft)
-
-    if (known_args["v"]):
-        show_mesh = input_mesh.copy()
+        support_mesh = None
         if support_enable:
-            show_mesh += support_mesh
-        if raft_mesh:
-            show_mesh += raft_mesh
+            logger.info("Create support mesh")
 
-        show_mesh.show(smooth=False, flags={"axis": True, "grid": True})
+            support_mesh = createSupportMesh(
+                input_mesh,
+                support_angle=settings_parser.getSettingValue("support_angle"),
+                filter_upwards_facing_faces=True,
+                down_vector=[0, -math.cos(math.radians(blackbelt_support_gantry_angle_bias)), -math.sin(blackbelt_support_gantry_angle_bias)],
+                bottom_cut_off=settings_parser.getSettingValue("wall_line_width_0"),
+                minimum_island_area=blackbelt_support_minimum_island_area
+            )
+            support_mesh.visual.vertex_colors = [[0,255,255,255]] * len(support_mesh.vertices)
 
-    logger.info("Creating temporary pretransformed mesh")
-    mesh_pretransformer.pretransformMesh(input_mesh)
-    flipYZ(input_mesh)
-    input_mesh.invert()
+        raft_mesh = None
+        if blackbelt_raft:
+            logger.info("Create raft mesh")
+            raft_mesh = createRaftMesh(
+                input_mesh,
+                raft_thickness=blackbelt_raft_thickness,
+                raft_margin=blackbelt_raft_margin
+            )
+            raft_mesh.visual.vertex_colors = [[128,128,128,255]] * len(raft_mesh.vertices)
+
+            translation_for_raft = trimesh.transformations.translation_matrix([
+                0, blackbelt_raft_thickness + blackbelt_raft_gap, 0
+            ])
+            input_mesh.apply_transform(translation_for_raft)
+            if support_mesh:
+                support_mesh.apply_transform(translation_for_raft)
+
+        if (known_args["v"]):
+            show_mesh = input_mesh.copy()
+            if support_enable:
+                show_mesh += support_mesh
+            if raft_mesh:
+                show_mesh += raft_mesh
+
+            show_mesh.show(smooth=False, flags={"axis": True, "grid": True})
+
+        logger.info("Creating temporary pretransformed mesh")
+        mesh_pretransformer.pretransformMesh(input_mesh)
+        flipYZ(input_mesh)
+        input_mesh.invert()
     temp_mesh_file_path = tempFileName()
     input_mesh.export(temp_mesh_file_path)
+
+    #end of belt specifics
 
     logger.info("Launching CuraEngine")
     engine_args = [
@@ -225,32 +242,36 @@ def main():
 
     engine_args.extend(["-l", temp_mesh_file_path])
 
-    if support_enable:
-        logger.info("Creating temporary pretransformed support-mesh")
-        mesh_pretransformer.pretransformMesh(support_mesh)
-        flipYZ(support_mesh)
-        support_mesh.invert()
-        temp_support_mesh_file_path = tempFileName()
-        support_mesh.export(temp_support_mesh_file_path)
 
-        engine_args.extend(["-l", temp_support_mesh_file_path])
-        engine_args.extend(["-s",  "support_mesh=true"])
-        engine_args.extend(["-s",  "support_mesh_drop_down=false"])
+    # I would say here would be the start of specifics for belt that i would need to go around
+    if raw_gantry_angle < 90:
+        if support_enable:
+            logger.info("Creating temporary pretransformed support-mesh")
+            mesh_pretransformer.pretransformMesh(support_mesh)
+            flipYZ(support_mesh)
+            support_mesh.invert()
+            temp_support_mesh_file_path = tempFileName()
+            support_mesh.export(temp_support_mesh_file_path)
 
-    if blackbelt_raft:
-        logger.info("Creating temporary pretransformed raft-mesh")
-        mesh_pretransformer.pretransformMesh(raft_mesh)
-        flipYZ(raft_mesh)
-        raft_mesh.invert()
-        temp_raft_mesh_file_path = tempFileName()
-        raft_mesh.export(temp_raft_mesh_file_path)
+            engine_args.extend(["-l", temp_support_mesh_file_path])
+            engine_args.extend(["-s",  "support_mesh=true"])
+            engine_args.extend(["-s",  "support_mesh_drop_down=false"])
 
-        engine_args.extend(["-l", temp_raft_mesh_file_path])
-        engine_args.extend(["-s", "wall_line_count=99999999"])
-        engine_args.extend(["-s", "speed_wall_0=%f" % blackbelt_raft_speed])
-        engine_args.extend(["-s", "speed_wall_x=%f" % blackbelt_raft_speed])
-        engine_args.extend(["-s", "material_flow=%f" % blackbelt_raft_flow])
+        if blackbelt_raft:
+            logger.info("Creating temporary pretransformed raft-mesh")
+            mesh_pretransformer.pretransformMesh(raft_mesh)
+            flipYZ(raft_mesh)
+            raft_mesh.invert()
+            temp_raft_mesh_file_path = tempFileName()
+            raft_mesh.export(temp_raft_mesh_file_path)
 
+            engine_args.extend(["-l", temp_raft_mesh_file_path])
+            engine_args.extend(["-s", "wall_line_count=99999999"])
+            engine_args.extend(["-s", "speed_wall_0=%f" % blackbelt_raft_speed])
+            engine_args.extend(["-s", "speed_wall_x=%f" % blackbelt_raft_speed])
+            engine_args.extend(["-s", "material_flow=%f" % blackbelt_raft_flow])
+
+    # i would say this would be the end
     logger.debug(engine_args)
 
     env = os.environ.copy()
@@ -263,21 +284,25 @@ def main():
 
     logger.info("Removing temporary meshes")
     os.remove(temp_mesh_file_path)
-    if support_enable:
-        os.remove(temp_support_mesh_file_path)
-    if blackbelt_raft:
-        os.remove(temp_raft_mesh_file_path)
 
-    if blackbelt_belt_wall_enabled:
-        logger.info("Post processing gcode for belt wall")
+    # I would say here would be the start of specifics for belt that i would need to go around
+    if raw_gantry_angle < 90:
 
-        post_processor = GcodePostProcessor(
-            belt_wall_enable=blackbelt_belt_wall_enabled,
-            belt_wall_flow=blackbelt_belt_wall_flow,
-            belt_wall_speed=blackbelt_belt_wall_speed,
-            wall_line_width_0=settings_parser.getSettingValue("wall_line_width_0")
-        )
-        post_processor.processGcodeFile(known_args["o"][0])
+        if support_enable:
+            os.remove(temp_support_mesh_file_path)
+        if blackbelt_raft:
+            os.remove(temp_raft_mesh_file_path)
+
+        if blackbelt_belt_wall_enabled:
+            logger.info("Post processing gcode for belt wall")
+
+            post_processor = GcodePostProcessor(
+                belt_wall_enable=blackbelt_belt_wall_enabled,
+                belt_wall_flow=blackbelt_belt_wall_flow,
+                belt_wall_speed=blackbelt_belt_wall_speed,
+                wall_line_width_0=settings_parser.getSettingValue("wall_line_width_0")
+            )
+            post_processor.processGcodeFile(known_args["o"][0])
 
 if __name__ == "__main__":
     sys.exit(main())
