@@ -4,7 +4,7 @@ A commandline slicer for belt-style printers utilising CuraEngine.
 Ported code from blackbelt slicer by FieldOfView
 
 
-## Buil instructions for pip package
+## Build instructions for pip package
 1) Install poetry in system,
 2) cd into the project directly and create venv using `python3 -m venv venv`
 3) Activate virtualenv with `source venv/bin/activate`
@@ -89,6 +89,15 @@ Setting values specified on the command line always override what is set in conf
 ## Example for Blackbelt 3D printer
 ```
 (venv) python BeltEngine.py -o output.gcode model.stl -c settings/blackbelt.cfg.ini -c settings/bb_04mm.cfg.ini -s beltengine_gantry_angle=35 -s support_enable=True
+```
+
+### CR30 Example
+```angular2html
+python3 -m belt_engine.BeltEngine -o ./output.gcode model.stl -c ./belt_engine/settings/CR30.cfg.ini -s support_enable=True -v
+```
+### normal printer Example
+```angular2html
+python3 -m belt_engine.BeltEngine -o ./output.gcode model.stl -c ./belt_engine/settings/CR30-verttest.cfg.ini -s support_enable=True -v
 ```
 
 

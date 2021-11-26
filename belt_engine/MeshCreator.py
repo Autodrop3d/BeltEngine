@@ -9,6 +9,16 @@ import math
 import logging
 logger = logging.getLogger("BeltEngine")
 
+#hey lets check if this is a pi...
+def isOnPi():
+    try:
+        with open('/sys/firmware/devicetree/base/model', 'r') as m:
+            if 'raspberry pi' in m.read().lower():
+                return True
+    except FileNotFoundError:
+        pass
+    return False
+
 def createSupportMesh(
         tri_mesh,
         support_angle = 50,
@@ -96,8 +106,16 @@ def createRaftMesh(
     elif raft_margin < 0:
         offset_raft_mesh_points = raft_mesh_polygon.exterior.parallel_offset(-raft_margin, side="right", resolution=5)
         raft_mesh_polygon = shapely.geometry.Polygon(offset_raft_mesh_points)
-    raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -raft_thickness)
-    raft_mesh.vertices[:,[0,1,2]] = -raft_mesh.vertices[:,[1,2,0]]
+
+
+    #raspberry pi had a flipped thing going on, turning off the - items here seemed to fix it, not sure about other sbcs
+    if isOnPi():
+        raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, raft_thickness)
+        raft_mesh.vertices[:,[0,1,2]] = raft_mesh.vertices[:,[1,2,0]]
+    else:
+        raft_mesh = trimesh.creation.extrude_polygon(raft_mesh_polygon, -raft_thickness)
+        raft_mesh.vertices[:,[0,1,2]] = -raft_mesh.vertices[:,[1,2,0]]
+
     raft_mesh.invert()
 
     return raft_mesh
