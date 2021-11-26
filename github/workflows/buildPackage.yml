@@ -1,0 +1,19 @@
+name: "Build package"
+
+on:
+  push:
+    branches:['main']
+
+jobs:
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: "⬇ Checkout"
+      uses: actions/checkout@v2
+
+    - name: "🏗 Run CustoPiZer"
+      run: |
+        sudo apt update \
+        sudo apt upgrade 
