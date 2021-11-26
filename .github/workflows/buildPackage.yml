@@ -13,7 +13,7 @@ jobs:
     - name: "⬇ Checkout"
       uses: actions/checkout@v2
 
-    - name: "🏗 Run CustoPiZer"
+    - name: "Test Build"
       run: |
         sudo apt update \
         sudo apt upgrade \
