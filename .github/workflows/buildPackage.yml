@@ -16,4 +16,7 @@ jobs:
     - name: "🏗 Run CustoPiZer"
       run: |
         sudo apt update \
-        sudo apt upgrade 
+        sudo apt upgrade \
+        echo "this is a test"
+
+
