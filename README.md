@@ -23,12 +23,12 @@ pip3 install ./belt-engine-0.1.3.tar.gz
 
 The suggested way to install BeltEngine is via Pip however you may need to install additional dependencies in order to get the pip install to succeed.
 
-**Help Wanted:**  Please submit a pull request to update these docs if you install BeltEngine on an OS that is not yet documented!
-
 ```bash
 wget https://github.com/Autodrop3d/BeltEngine/raw/main/dist/belt-engine-0.1.3.tar.gz
 pip3 install ./belt-engine-0.1.3.tar.gz
 ```
+
+**Help Wanted:**  Please submit a pull request to update these docs if you install BeltEngine on an OS that is not yet documented!
 
 
 ## Building the Pip Package
