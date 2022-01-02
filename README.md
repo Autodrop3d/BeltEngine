@@ -3,29 +3,52 @@ A commandline slicer for belt-style printers utilising CuraEngine.
 
 Ported code from blackbelt slicer by FieldOfView
 
+## Installation
 
-## Build instructions for pip package
+### Raspbian/Ubuntu/Debian
+
+```bash
+sudo apt update
+sudo apt install \
+  libgeos-dev \
+  libblas-dev \
+  liblapack-dev \
+  gfortran
+
+wget https://github.com/Autodrop3d/BeltEngine/raw/main/dist/belt-engine-0.1.3.tar.gz
+pip3 install ./belt-engine-0.1.3.tar.gz
+```
+
+### Other OSs
+
+The suggested way to install BeltEngine is via Pip however you may need to install additional dependencies in order to get the pip install to succeed.
+
+**Help Wanted:**  Please submit a pull request to update these docs if you install BeltEngine on an OS that is not yet documented!
+
+```bash
+wget https://github.com/Autodrop3d/BeltEngine/raw/main/dist/belt-engine-0.1.3.tar.gz
+pip3 install ./belt-engine-0.1.3.tar.gz
+```
+
+
+## Building the Pip Package
+
+**Warning:**  This is for developers only. Normally you will not need to do this.
+
 1) Install poetry in system,
 2) cd into the project directly and create venv using `python3 -m venv venv`
 3) Activate virtualenv with `source venv/bin/activate`
 4) Run poetry install (this will install development version as executable in the virtualenv. That means you can just change the code and run `belt-engine` and changes will take effect. Usefull for development). I did not test this in rpi (YMMV)
 5) Change the version in pyproject file.
 6) Run `poetry build`. This will create packages inside `dist` folder.
-
-
-
-
-```
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
-source $HOME/.poetry/env
-python3 -m venv venv
-source venv/bin/activate
-poetry build
-cd dist
-
-```
-
-
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
+  source $HOME/.poetry/env
+  python3 -m venv venv
+  source venv/bin/activate
+  poetry build
+  cd dist
+  ```
 
 
 ## Usage
