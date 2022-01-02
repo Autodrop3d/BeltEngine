@@ -13,7 +13,9 @@ sudo apt install \
   libgeos-dev \
   libblas-dev \
   liblapack-dev \
-  gfortran
+  gfortran \
+  libjpeg-dev \
+  zlib1g-dev
 
 wget https://github.com/Autodrop3d/BeltEngine/raw/main/dist/belt-engine-0.1.3.tar.gz
 pip3 install ./belt-engine-0.1.3.tar.gz
