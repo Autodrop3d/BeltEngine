@@ -15,6 +15,7 @@ sudo apt install \
   liblapack-dev \
   gfortran \
   libjpeg-dev \
+  python3-dev \
   zlib1g-dev
 
 wget https://github.com/Autodrop3d/BeltEngine/raw/main/dist/belt-engine-0.1.3.tar.gz
