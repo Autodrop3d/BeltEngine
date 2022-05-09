@@ -122,7 +122,7 @@ python3 -m belt_engine.BeltEngine -o ./output.gcode model.stl -c ./belt_engine/s
 ```
 ### normal printer Example
 ```angular2html
-python3 -m belt_engine.BeltEngine -o ./output.gcode model.stl -c ./belt_engine/settings/CR30-verttest.cfg.ini -s support_enable=True -v
+python3 -m belt_engine.BeltEngine -o ./output.gcode model.stl -c ./belt_engine/settings/verttest.cfg.ini -s support_enable=True -v
 ```
 
 
